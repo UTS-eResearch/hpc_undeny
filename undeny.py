@@ -1,30 +1,54 @@
 #!/usr/bin/python
-#
-# Usage: sudo python ./undeny.py ip_address
-# Note: a full ip address must be provided. 
-#
-# This program does the following steps:
-# 1. stop denyhosts 
-# 2. remove the specified ip_adddress from 
-#    /etc/hosts.deny and the 5 other files in /var/lib/denyhosts/ 
-# 3. start denyhosts 
-#
-# From: http://serverfault.com/questions/189932/how-to-delete-ip-address-from-denyhosts
-# Substantially modified by MRL for Centos.
-#
-# Versions:
-# 2013.08.19: first release by MRL
-# 2013.08.19: added test for sudo use
-# 2014.08.13: File opens now use 'with' and moved into function. Changed logging.
-#             Use shutil()
+
+'''
+This script removes IP addresses that have been blocked by denyhosts.
+
+Usage: sudo python ./undeny.py ip_address
+Note: a full ip address must be provided. 
+
+This program does the following steps:
+1. stop denyhosts 
+2. remove the specified ip_adddress from /etc/hosts.deny and other files in /var/lib/denyhosts/ 
+   This is done safely using a temp file followed by a copy and a remove. 
+3. start denyhosts 
+
+Notes on Renaming and Moving Files
+----------------------------------
+
+You can't use os.rename acrosss different file systems as shown here:
+    >>> import os
+    >>> os.rename('/tmp/mikes','/tmp/mikes2')    # same file system, OK
+    >>> os.rename('/tmp/mikes2','./mikes2')      # different file system, barfs  
+    Traceback (most recent call last):
+    OSError: [Errno 18] Invalid cross-device link
+    >>> 
+
+It's safer to use shutil.copy() and then a shutil.remove()
+
+Permissions
+-----------
+
+On Centos 6.4 the permissions of the files in /var/lib/denyhosts/ are 644 (-rw-r--r--)
+The temp file that we create is readable and writable only by the creating user ID 
+i.e. 600 (-rw-------). Hence after the copy of the temp file overwriting the original 
+denyhosts files we need to chmod the denyhosts files back to 644. 
+
+Versions
+--------
+
+2013.08.19: first release by MRL
+2013.08.19: added test for sudo use
+2014.08.13: File opens now use 'with' and moved into function. Changed logging. Use shutil()
+'''
 
 import os, sys, re
 import subprocess
-import shutil       # required as os.move() cannot be used. 
+import shutil       # required as os.rename() cannot be used. 
 import tempfile
 import logging
 import datetime
 import socket       # used to validate ip addresses
+
 
 ########################
 # Set configuration here
@@ -32,9 +56,6 @@ import socket       # used to validate ip addresses
 
 # Set here the full pathname name of the logfile. 
 LOGFILE = '/shared/homes/mlake/undeny.log'
-
-# Set the logging level. Can be DEBUG, INFO (default), or ERROR only.
-logging.basicConfig(filename=LOGFILE, level=logging.INFO, format=None)
 
 # List the denyhosts files that need to be edited.
 denyhosts_files = [
@@ -45,6 +66,21 @@ denyhosts_files = [
     '/var/lib/denyhosts/hosts-valid',
     '/var/lib/denyhosts/users-hosts',
     '/var/lib/denyhosts/users-invalid' ]
+
+
+################
+# Functions here 
+################
+
+# Set the logging level. Can be DEBUG, INFO (default), or ERROR only.
+# This also checks the LOGFILE can be opened. It's placed here before 
+# the functions that use it. 
+try:
+    logging.basicConfig(filename=LOGFILE, level=logging.INFO, format=None)
+except IOError:
+    print 'Error, can\'t find LOGFILE %s. ' % LOGFILE
+    print 'Did you forget to change the value of this in this code?'
+    sys.exit()
 
 
 def usage():
@@ -59,7 +95,7 @@ def check_valid_ip(address):
     Using regex to validate IP address is a bad idea - this will pass
     999.999.999.999 as valid. Using a socket instead is much better validation
     and just as easy. 
-    #except socket.error:
+    # TODO use except socket.error:
     '''
 
     try: 
@@ -123,7 +159,7 @@ def delete_from_file(host_file, ip):
         status = False
     else:
         # This section will run if there were no exceptions. 
-        # Note: here we must use shutil.copy() and not os.move()
+        # Note: here we must use shutil.copy() and not os.rename()
         # We also can't use shutil.move() across file systems. 
         # You have to copy then use remove. 
         temp_file.close()
@@ -147,7 +183,7 @@ def delete_from_file(host_file, ip):
 def main():
 
     # Check user must run this script using sudo.
-    if os.geteuid() != 0 and not TEST:
+    if os.geteuid() != 0:
         usage()
         print 'Error: you have to run this script as sudo.'
         sys.exit()
