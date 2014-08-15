@@ -56,6 +56,7 @@ import socket       # used to validate ip addresses
 
 # Set here the full pathname name of the logfile. 
 LOGFILE = '/shared/homes/mlake/undeny.log'
+LOGFILE = 'undeny.log'
 
 # List the denyhosts files that need to be edited.
 denyhosts_files = [
@@ -71,17 +72,6 @@ denyhosts_files = [
 ################
 # Functions here 
 ################
-
-# Set the logging level. Can be DEBUG, INFO (default), or ERROR only.
-# This also checks the LOGFILE can be opened. It's placed here before 
-# the functions that use it. 
-try:
-    logging.basicConfig(filename=LOGFILE, level=logging.INFO, format=None)
-except IOError:
-    print 'Error, can\'t find LOGFILE %s. ' % LOGFILE
-    print 'Did you forget to change the value of this in this code?'
-    sys.exit()
-
 
 def usage():
     print ''
@@ -199,6 +189,15 @@ def main():
     if not check_valid_ip(ip):
         usage()
         print 'Error: %s is not a valid IP address.' % ip
+        sys.exit()
+    
+    # Set the logging level. Can be DEBUG, INFO (default), or ERROR only.
+    # This also checks the LOGFILE can be opened. 
+    try:
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO, format=None)
+    except IOError:
+        print 'Error, can\'t find LOGFILE %s. ' % LOGFILE
+        print 'Did you forget to change the value of this in this code?'
         sys.exit()
 
     # Log one line into the logfile.
