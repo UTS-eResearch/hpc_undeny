@@ -7,10 +7,16 @@ Usage: sudo python ./undeny.py ip_address
 Note: a full ip address must be provided. 
 
 This program does the following steps:
-1. stop denyhosts 
-2. remove the specified ip_adddress from /etc/hosts.deny and other files in /var/lib/denyhosts/ 
-   This is done safely using a temp file followed by a copy and a remove. 
-3. start denyhosts 
+1. Stop denyhosts.
+2. Remove the specified ip_adddress from /etc/hosts.deny and other files in /var/lib/denyhosts/ 
+   Reference: http://denyhosts.sourceforge.net/faq.html#3_19
+   - This is done safely using a temp file followed by a copy and a remove. 
+   - The copy is named with "_orig" appended.
+   - If the supplied IP address is not found then the copied and original files will be identical. 
+3. Start denyhosts. 
+
+It does no harm to run this program again or on an IP address that is 
+not in any of the deny hosts files. 
 
 Notes on Renaming and Moving Files
 ----------------------------------
@@ -28,7 +34,7 @@ It's safer to use shutil.copy() and then a shutil.remove()
 Permissions
 -----------
 
-On Centos 6.4 the permissions of the files in /var/lib/denyhosts/ are 644 (-rw-r--r--)
+On Centos 6.4 the permissions of the files in /var/lib/denyhosts/ are 644 (-rw-r--r--).
 The temp file that we create is readable and writable only by the creating user ID 
 i.e. 600 (-rw-------). Hence after the copy of the temp file overwriting the original 
 denyhosts files we need to chmod the denyhosts files back to 644. 
@@ -39,6 +45,7 @@ Versions
 2013.08.19: first release by MRL
 2013.08.19: added test for sudo use
 2014.08.13: File opens now use 'with' and moved into function. Changed logging. Use shutil()
+2014.11.06: Added more comments on what happens.
 '''
 
 import os, sys, re
@@ -55,8 +62,8 @@ import socket       # used to validate ip addresses
 ########################
 
 # Set here the full pathname name of the logfile. 
-LOGFILE = '/shared/homes/mlake/undeny.log'
 LOGFILE = 'undeny.log'
+LOGFILE = '/shared/homes/mlake/undeny.log'
 
 # List the denyhosts files that need to be edited.
 denyhosts_files = [
