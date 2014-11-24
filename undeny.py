@@ -15,7 +15,7 @@ This program does the following steps:
 Notes on Renaming and Moving Files
 ----------------------------------
 
-You can't use os.rename acrosss different file systems as shown here:
+You can't use os.rename across different file systems as shown here:
     >>> import os
     >>> os.rename('/tmp/mikes','/tmp/mikes2')    # same file system, OK
     >>> os.rename('/tmp/mikes2','./mikes2')      # different file system, barfs  
