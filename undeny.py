@@ -61,9 +61,10 @@ import socket       # used to validate ip addresses
 # Set configuration here
 ########################
 
-# Set here the full pathname name of the logfile. 
-LOGFILE = 'undeny.log'
-LOGFILE = '/shared/homes/mlake/undeny.log'
+# Set here the full pathname to the logfile. 
+# Note it's been set to be under root as root runs this program and root 
+# cannot write to anyones home directory.
+LOGFILE = '/root/undeny.log'
 
 # List the denyhosts files that need to be edited.
 denyhosts_files = [
