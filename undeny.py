@@ -83,7 +83,8 @@ denyhosts_files = [
 
 def usage():
     print ''
-    print 'Usage: sudo %s IP_address' % sys.argv[0] 
+    print 'Usage: sudo python %s IP_address' % sys.argv[0] 
+    print '  The python invocation is required for sudo.'
     print '  The IP address must be a full dotted-quad ip address.\n' 
 
 
